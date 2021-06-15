@@ -38,6 +38,32 @@ app.post("/login", (req, res) => {
   });
 });
 
+app.post("/register", (req, res) => {
+  const { userName, login, password } = req.body;
+  const db = client.db("saveMoneyApp");
+  const users = db.collection("users");
+
+  users.findOne({ userLogin: login }, (err, data) => {
+    if (err) res.json({ status: "error" });
+    else {
+      if (data === null) {
+        const hash = passwordHash.generate(password);
+        users.insertOne({
+          userName: userName,
+          userLogin: login,
+          userPassword: hash,
+          userRole: "user",
+        });
+        res.json({ status: "ok" });
+      } else {
+        res.json({
+          status: "error",
+        });
+      }
+    }
+  });
+});
+
 app.get("*", (req, res) => {
   res.send("404", 404);
 });

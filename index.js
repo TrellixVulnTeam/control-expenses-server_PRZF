@@ -112,12 +112,17 @@ app.post("/setLimit", (req, res) => {
           status: "active",
         },
         (err) => {
-          if (err) res.json({ status: "error" });
+          if (err)
+            res.json({ status: "error", message: "Something went wrong" });
           else res.json({ status: "ok" });
         }
       );
     } else {
-      res.json({ status: "error" });
+      res.json({
+        status: "error",
+        message:
+          "There is seted up limit, delete current limit to setup a new one",
+      });
     }
   });
 });
@@ -128,16 +133,24 @@ app.post("/setTarget", (req, res) => {
 
   const { id, value } = req.body;
   limits.findOne({ userID: id, status: "active" }, (err, limit) => {
-    if (err) res.json({ status: "error" });
+    if (err) res.json({ status: "error", message: "Something went wrong!" });
     else {
-      limits.updateOne(
-        { _id: mongo.ObjectId(limit._id) },
-        { $set: { targetValue: parseFloat(value) } },
-        (err) => {
-          if (err) res.json({ status: "error" });
-          else res.json({ status: "ok" });
-        }
-      );
+      if (limit !== null) {
+        limits.updateOne(
+          { _id: mongo.ObjectId(limit._id) },
+          { $set: { targetValue: parseFloat(value) } },
+          (err) => {
+            if (err)
+              res.json({ status: "error", message: "Something went wrong!" });
+            else res.json({ status: "ok" });
+          }
+        );
+      } else {
+        res.json({
+          status: "error",
+          message: "You need to setup limit first!",
+        });
+      }
     }
   });
 });
@@ -148,16 +161,63 @@ app.post("/editLimit", (req, res) => {
 
   const { id, value } = req.body;
   limits.findOne({ userID: id, status: "active" }, (err, limit) => {
-    if (err) res.json({ status: "error" });
+    if (err) res.json({ status: "error", message: "Something went wrong!" });
     else {
-      limits.updateOne(
-        { _id: mongo.ObjectId(limit._id) },
-        { $inc: { limitValue: parseFloat(value) } },
-        (err) => {
-          if (err === null) res.json({ status: "ok" });
-          else res.json({ status: "error" });
-        }
-      );
+      console.log(limit);
+      if (limit === null) {
+        res.json({
+          status: "error",
+          message: "You need to setup limit first!",
+        });
+      } else {
+        limits.updateOne(
+          { _id: mongo.ObjectId(limit._id) },
+          { $inc: { limitValue: parseFloat(value) } },
+          (err) => {
+            if (err === null) res.json({ status: "ok" });
+            else
+              res.json({ status: "error", message: "Something went wrong!" });
+          }
+        );
+      }
+    }
+  });
+});
+
+app.post("/loadExpenses", (req, res) => {
+  const { id } = req.body;
+  const db = client.db("saveMoneyApp");
+  const limits = db.collection("Limits");
+
+  limits.findOne({ userID: id, status: "active" }, (err, limit) => {
+    if (err) res.json({ status: "error", message: "Something went wrong!" });
+    else {
+      if (limit === null) {
+        res.json({
+          status: "error",
+          message: "You need to set limit to add product!",
+        });
+      } else {
+        const expenses = db.collection("Expenses");
+
+        expenses
+          .find({ limitID: limit._id.toString() })
+          .toArray((err, expenses) => {
+            if (err) {
+              res.json({ status: "error", message: "Something went wrong!" });
+            } else {
+              if (expenses.length === 0) {
+                res.json({
+                  status: "no-product",
+                  message: "No products added yet!",
+                });
+              } else {
+                res.json({ status: "ok", expenses: expenses });
+              }
+              res.end();
+            }
+          });
+      }
     }
   });
 });

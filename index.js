@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mongo = require("mongodb");
 const passwordHash = require("password-hash");
+const { json } = require("express");
 
 const app = express();
 
@@ -92,6 +93,26 @@ app.post("/delete-limit", (req, res) => {
       res.json({ deleted: true });
     } else {
       res.json({ deleted: false });
+    }
+  });
+});
+
+app.post("/setLimit", (req, res) => {
+  const db = client.db("saveMoneyApp");
+  const limits = db.collection("Limits");
+
+  const { id, value } = req.body;
+  limits.findOne({ userID: id, status: "active" }, (err, data) => {
+    if (data === null) {
+      limits.insertOne(
+        { userID: id, limitValue: value, status: "active" },
+        (err) => {
+          if (err) res.json({ status: "error" });
+          else res.json({ status: "ok" });
+        }
+      );
+    } else {
+      res.json({ status: "error" });
     }
   });
 });

@@ -222,6 +222,38 @@ app.post("/loadExpenses", (req, res) => {
   });
 });
 
+app.post("/addProduct", (req, res) => {
+  const { id, name, category, cost } = req.body;
+
+  const db = client.db("saveMoneyApp");
+  const limits = db.collection("Limits");
+
+  limits.findOne({ userID: id, status: "active" }, (err, limit) => {
+    if (err) res.json({ status: "error", message: "Something went wrong!" });
+    else {
+      if (limit === null)
+        res.json({ status: "error", message: "Something went wrong!" });
+      else {
+        limits.updateOne(
+          { userID: id, status: "active" },
+          { $inc: { limitValue: -1 * cost } }
+        );
+
+        const limit_id = limit._id;
+
+        const expensess = db.collection("Expenses");
+        expensess.insertOne({
+          name: name,
+          category: category,
+          cost: cost,
+          limitID: limit_id.toString(),
+        });
+        res.json({ status: "ok" });
+      }
+    }
+  });
+});
+
 app.get("*", (req, res) => {
   res.send("404", 404);
 });

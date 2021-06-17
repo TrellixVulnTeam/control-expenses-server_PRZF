@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const mongo = require("mongodb");
 const passwordHash = require("password-hash");
-const { json } = require("express");
 
 const app = express();
 
@@ -45,6 +44,7 @@ app.post("/login", (req, res) => {
                 userId: data._id,
                 isLimitSet: true,
                 limitValue: limit.limitValue,
+                targetValue: limit.targetValue,
               });
             }
           });
@@ -105,7 +105,12 @@ app.post("/setLimit", (req, res) => {
   limits.findOne({ userID: id, status: "active" }, (err, data) => {
     if (data === null) {
       limits.insertOne(
-        { userID: id, limitValue: value, status: "active" },
+        {
+          userID: id,
+          limitValue: parseFloat(value),
+          targetValue: 0,
+          status: "active",
+        },
         (err) => {
           if (err) res.json({ status: "error" });
           else res.json({ status: "ok" });
@@ -113,6 +118,46 @@ app.post("/setLimit", (req, res) => {
       );
     } else {
       res.json({ status: "error" });
+    }
+  });
+});
+
+app.post("/setTarget", (req, res) => {
+  const db = client.db("saveMoneyApp");
+  const limits = db.collection("Limits");
+
+  const { id, value } = req.body;
+  limits.findOne({ userID: id, status: "active" }, (err, limit) => {
+    if (err) res.json({ status: "error" });
+    else {
+      limits.updateOne(
+        { _id: mongo.ObjectId(limit._id) },
+        { $set: { targetValue: parseFloat(value) } },
+        (err) => {
+          if (err) res.json({ status: "error" });
+          else res.json({ status: "ok" });
+        }
+      );
+    }
+  });
+});
+
+app.post("/editLimit", (req, res) => {
+  const db = client.db("saveMoneyApp");
+  const limits = db.collection("Limits");
+
+  const { id, value } = req.body;
+  limits.findOne({ userID: id, status: "active" }, (err, limit) => {
+    if (err) res.json({ status: "error" });
+    else {
+      limits.updateOne(
+        { _id: mongo.ObjectId(limit._id) },
+        { $inc: { limitValue: parseFloat(value) } },
+        (err) => {
+          if (err === null) res.json({ status: "ok" });
+          else res.json({ status: "error" });
+        }
+      );
     }
   });
 });

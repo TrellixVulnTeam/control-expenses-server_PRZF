@@ -9,9 +9,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "connect-mongodb-session": "^2.4.1",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "express-session": "^1.17.2",
+    "i": "^0.3.6",
     "mongodb": "^3.6.9",
+    "npm": "^7.17.0",
     "password-hash": "^1.2.2"
   }
 }

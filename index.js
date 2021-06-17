@@ -4,8 +4,10 @@ const mongo = require("mongodb");
 const passwordHash = require("password-hash");
 
 const app = express();
+
 app.use(express.json());
 app.use(cors());
+
 const port = process.env.PORT || 3030;
 
 const client = new mongo.MongoClient("mongodb://localhost:27017", {
@@ -23,14 +25,29 @@ app.post("/login", (req, res) => {
     if (err) res.json({ logged: false, errorMsg: "error" });
     else {
       if (data !== null) {
-        if (passwordHash.verify(password, data.userPassword))
-          res.json({
-            logged: true,
-            userName: data.userName,
-            userRole: data.userRole,
-            userId: data._id,
+        if (passwordHash.verify(password, data.userPassword)) {
+          const limits = db.collection("Limits");
+          const id = data._id.toString();
+
+          limits.findOne({ userID: id, status: "active" }, (err, limit) => {
+            if (limit === null) {
+              res.json({
+                logged: true,
+                userName: data.userName,
+                userId: data._id,
+                isLimitSet: false,
+              });
+            } else {
+              res.json({
+                logged: true,
+                userName: data.userName,
+                userId: data._id,
+                isLimitSet: true,
+                limitValue: limit.limitValue,
+              });
+            }
           });
-        else res.json({ logged: false, errorMsg: "error" });
+        } else res.json({ logged: false, errorMsg: "error" });
       } else {
         res.json({ logged: false, errorMsg: "error" });
       }
@@ -60,6 +77,21 @@ app.post("/register", (req, res) => {
           status: "error",
         });
       }
+    }
+  });
+});
+
+app.post("/delete-limit", (req, res) => {
+  const { userId } = req.body;
+  const db = client.db("saveMoneyApp");
+  const limits = db.collection("Limits");
+
+  limits.findOne({ userID: userId, status: "active" }, (err, limit) => {
+    if (limit !== null) {
+      limits.deleteOne({ _id: mongo.ObjectId(limit._id) });
+      res.json({ deleted: true });
+    } else {
+      res.json({ deleted: false });
     }
   });
 });

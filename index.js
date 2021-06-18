@@ -43,6 +43,7 @@ app.post("/login", (req, res) => {
                 userName: data.userName,
                 userId: data._id,
                 isLimitSet: true,
+                startValue: limit.startValue,
                 limitValue: limit.limitValue,
                 targetValue: limit.targetValue,
               });
@@ -107,6 +108,7 @@ app.post("/setLimit", (req, res) => {
       limits.insertOne(
         {
           userID: id,
+          startValue: parseFloat(value),
           limitValue: parseFloat(value),
           targetValue: 0,
           status: "active",

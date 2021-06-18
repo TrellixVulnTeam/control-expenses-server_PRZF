@@ -46,6 +46,7 @@ app.post("/login", (req, res) => {
                 startValue: limit.startValue,
                 limitValue: limit.limitValue,
                 targetValue: limit.targetValue,
+                expireTime: limit.expireTime,
               });
             }
           });
@@ -102,7 +103,8 @@ app.post("/setLimit", (req, res) => {
   const db = client.db("saveMoneyApp");
   const limits = db.collection("Limits");
 
-  const { id, value } = req.body;
+  const { id, value, time } = req.body;
+
   limits.findOne({ userID: id, status: "active" }, (err, data) => {
     if (data === null) {
       limits.insertOne(
@@ -112,6 +114,7 @@ app.post("/setLimit", (req, res) => {
           limitValue: parseFloat(value),
           targetValue: 0,
           status: "active",
+          expireTime: time,
         },
         (err) => {
           if (err)
@@ -123,7 +126,7 @@ app.post("/setLimit", (req, res) => {
       res.json({
         status: "error",
         message:
-          "There is seted up limit, delete current limit to setup a new one",
+          "There is seted up limit, delete current limit to setup a new one.",
       });
     }
   });

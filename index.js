@@ -84,7 +84,7 @@ app.post("/register", (req, res) => {
   });
 });
 
-app.post("/delete-limit", (req, res) => {
+app.delete("/delete-limit", (req, res) => {
   const { userId } = req.body;
   const db = client.db("saveMoneyApp");
   const limits = db.collection("Limits");
@@ -160,7 +160,7 @@ app.post("/setTarget", (req, res) => {
   });
 });
 
-app.post("/editLimit", (req, res) => {
+app.patch("/editLimit", (req, res) => {
   const db = client.db("saveMoneyApp");
   const limits = db.collection("Limits");
 
@@ -168,7 +168,6 @@ app.post("/editLimit", (req, res) => {
   limits.findOne({ userID: id, status: "active" }, (err, limit) => {
     if (err) res.json({ status: "error", message: "Something went wrong!" });
     else {
-      console.log(limit);
       if (limit === null) {
         res.json({
           status: "error",
